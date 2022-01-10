@@ -14,7 +14,7 @@ jobs:
     needs: job1
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{fromJson(needs.job1.outputs.matrix)}}
+      matrix: {"include": [{"name": "cypress-main", "runner": "ubuntu-latest"}, {"name": "cypress-amm", "runner": "ubuntu-latest"}, {"name": "cypress-polygon", "runner": "ubuntu-latest"}]}
     steps:
     - run: echo ${{ matrix.project }}
     - run: echo ${{ matrix.config }}

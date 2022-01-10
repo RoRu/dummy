@@ -12,7 +12,7 @@ jobs:
   get-runner-for-tests:
     runs-on: ubuntu-latest
     outputs:
-      test-matrix: ${{toJSON(steps.get-test-matrix.outputs.matrix)}}
+      test-matrix: ${{steps.get-test-matrix.outputs.matrix}}
     steps:
       - id: runners-json
         uses: actions/github-script@v5
@@ -41,6 +41,7 @@ jobs:
                   t['runner']='self-hosted'
                   break
           test_matrix={"include":test_matrix}
+          print(f"name=matrix::{json.dumps(test_matrix)}")
           print(f"::set-output name=matrix::{json.dumps(test_matrix)}")
       - name: print output
         run: echo ${{steps.get-test-matrix.outputs.matrix}} | jq .
