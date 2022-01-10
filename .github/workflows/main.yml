@@ -43,7 +43,7 @@ jobs:
           test_matrix={"include":test_matrix}
           print(f"::set-output name=matrix::'{json.dumps(test_matrix)}'")
       - name: print output
-        run: echo '${{steps.get-test-matrix.outputs.matrix}}' | jq .
+        run: echo ${{steps.get-test-matrix.outputs.matrix}} | jq .
 
   check-no-matrix:
     runs-on: ubuntu-latest
@@ -52,8 +52,7 @@ jobs:
     steps:
       - name: print
         run: |
-          echo ${{needs.get-runner-for-tests.outputs.test-matrix}}
-          echo "${{matrix.name}}:${{matrix.runner}}"
+          echo ${{needs.get-runner-for-tests.outputs.test-matrix}} | jq .
 
   check_matrix:
     runs-on: ubuntu-latest
