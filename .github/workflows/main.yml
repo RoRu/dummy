@@ -44,7 +44,7 @@ jobs:
           print(f"name=matrix::{json.dumps(test_matrix)}")
           print(f"::set-output name=matrix::{json.dumps(test_matrix)}")
       - name: print output
-        run: echo ${{steps.get-test-matrix.outputs.matrix}} | jq .
+        run: echo "${{steps.get-test-matrix.outputs.matrix}}"
 
   check-no-matrix:
     runs-on: ubuntu-latest
