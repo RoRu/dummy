@@ -12,7 +12,7 @@ jobs:
   get-runner-for-tests:
     runs-on: ubuntu-latest
     outputs:
-      test-matrix: ${{steps.get-test-matrix.outputs.matrix}}
+      test-matrix: ${{toJSON(steps.get-test-matrix.outputs.matrix)}}
     steps:
       - id: runners-json
         uses: actions/github-script@v5
@@ -47,6 +47,7 @@ jobs:
 
   check-no-matrix:
     runs-on: ubuntu-latest
+    if: always()
     needs:
       - get-runner-for-tests
     steps:
@@ -56,6 +57,7 @@ jobs:
 
   check_matrix:
     runs-on: ubuntu-latest
+    if: always()
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.get-runner-for-tests.outputs.test-matrix)}}
