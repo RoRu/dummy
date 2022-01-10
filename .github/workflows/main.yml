@@ -12,22 +12,58 @@ jobs:
   get-runner-for-tests:
     runs-on: ubuntu-latest
     outputs:
-      matrix: "${{steps.matrix.outputs.matrix}}"
+      test-matrix: '${{steps.get-test-matrix.outputs.matrix}}'
     steps:
-      - id: matrix
-        name: matrix
+      - id: runners-json
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{secrets.LIST_RUNNERS_TOKEN}}
+          script: |
+            return github.rest.actions.listSelfHostedRunnersForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            })
+      - id: get-test-matrix
+        name: Get resulting runner tags
+        shell: python
+        env:
+          RUNNERS_JSON: '${{steps.runners-json.outputs.result}}'
         run: |
-          echo '::set-output name=matrix::{"include": [{"name": "cypress-main", "runner": "self-hosted"}, {"name": "cypress-amm", "runner": "self-hosted"}, {"name": "cypress-polygon", "runner": "self-hosted"}]}'
-  
-  check_matrix:
+          import json
+          from os import getenv
+          r = json.loads(getenv("RUNNERS_JSON"))['data']['runners']
+          test_matrix=[dict(name=name,runner='ubuntu-latest') for name in ['cypress-main','cypress-amm','cypress-polygon']]
+          for i in r:
+            if i['status'] == 'online' and not i['busy']:
+              labels = [l['name'] for l in i['labels']]
+              for t in test_matrix:
+                if t['name'] in labels:
+                  t['runner']='self-hosted'
+                  break
+          test_matrix={"include":test_matrix}
+          print(f"::set-output name=matrix::'{json.dumps(test_matrix)}'")
+      - name: print output
+        run: echo '${{steps.get-test-matrix.outputs.matrix}}' | jq .
+
+  check-no-matrix:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix: ${{fromJSON(needs.get-runner-for-tests.outputs.matrix)}}
     needs:
       - get-runner-for-tests
     steps:
       - name: print
         run: |
-          echo ${{needs.get-runner-for-tests.outputs.matrix}}
+          echo ${{needs.get-runner-for-tests.outputs.test-matrix}}
+          echo "${{matrix.name}}:${{matrix.runner}}"
+
+  check_matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJSON(needs.get-runner-for-tests.outputs.test-matrix)}}
+    needs:
+      - get-runner-for-tests
+    steps:
+      - name: print
+        run: |
+          echo ${{needs.get-runner-for-tests.outputs.test-matrix}}
           echo "${{matrix.name}}:${{matrix.runner}}"
